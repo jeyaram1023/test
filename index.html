@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeyaram's Portfolio</title>
+    
+    <!-- Rive அனிமேஷனை வேலை செய்ய வைக்கும் லைப்ரரி -->
+    <script src="https://unpkg.com/@rive-app/canvas@2.7.0"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background-color: #1a1a1a; /* உங்கள் வெப்சைட்டின் பேக்ரவுண்ட் கலர் */
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+
+        /* ஸ்டிக்கர் மிதக்கும் பகுதி (Floating Container) */
+        #rive-container {
+            position: fixed;
+            width: 200px;  /* ஸ்டிக்கரின் சைஸ் */
+            height: 200px;
+            bottom: -250px; /* ஆரம்பத்தில் கீழே மறைந்திருக்கும் */
+            right: 30px; /* வலது கார்னரில் தோன்றும் */
+            cursor: grab;
+            z-index: 1000;
+            transition: bottom 1s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* பவுன்ஸ் எஃபெக்ட் */
+            filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.4)); /* ஸ்டிக்கருக்கு ஷேடோ */
+        }
+
+        #rive-container:active {
+            cursor: grabbing;
+        }
+
+        /* பேக்ரவுண்ட் இல்லாத அனிமேஷன் கேன்வாஸ் */
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 style="color: white; text-align: center; margin-top: 20%;">Welcome to Jeyaram's Portfolio!</h1>
+    
+    <button id="start-btn" style="display:block; margin: 0 auto; padding: 10px 20px; cursor: pointer; border-radius: 8px; font-size: 16px;">Meet My Assistant</button>
+
+    <!-- அசிஸ்டன்ட் மற்றும் ஆடியோ -->
+    <div id="rive-container">
+        <canvas id="rive-canvas"></canvas>
+        <audio id="voice-audio" src="voice.mp3"></audio> <!-- உங்கள் ஆடியோ ஃபைல் பெயர் -->
+    </div>
+
+    <script>
+        const riveContainer = document.getElementById('rive-container');
+        const startBtn = document.getElementById('start-btn');
+        const audio = document.getElementById('voice-audio');
+
+        // 1. Rive அனிமேஷனை லோட் செய்தல் (நீங்கள் கொடுத்த sobo.riv ஃபைல்)
+        const r = new rive.Rive({
+            src: 'sobo.riv', // உங்கள் கார்ட்டூன் ஃபைலின் சரியான பெயர்
+            canvas: document.getElementById('rive-canvas'),
+            autoplay: true, // தானாகவே கண் சிமிட்டும் அனிமேஷன் ஓட
+            onLoad: () => {
+                console.log("Rive Animation Loaded successfully!");
+                r.resizeDrawingSurfaceToCanvas();
+            }
+        });
+
+        // 2. பட்டனை அழுத்தியதும் அசிஸ்டன்ட் வருவது
+        startBtn.addEventListener('click', () => {
+            startBtn.style.display = 'none'; // பட்டனை மறைக்க
+            
+            // அசிஸ்டன்ட் கீழே இருந்து மிதந்து வர
+            setTimeout(() => {
+                riveContainer.style.bottom = "30px";
+            }, 100);
+
+            // ஆடியோவை ப்ளே செய்ய
+            audio.play();
+        });
+
+        // 3. Drag & Drop வசதி (ஸ்டிக்கரை நகர்த்தி வைப்பது)
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        riveContainer.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - riveContainer.getBoundingClientRect().left;
+            offsetY = e.clientY - riveContainer.getBoundingClientRect().top;
+            riveContainer.style.transition = 'none'; // Drag பண்ணும்போது ஸ்மூத் ஆக இருக்க
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                let newX = e.clientX - offsetX;
+                let newY = e.clientY - offsetY;
+                
+                // ஸ்கிரீனை விட்டு வெளியே போகாமல் தடுக்க
+                newX = Math.max(0, Math.min(newX, window.innerWidth - riveContainer.offsetWidth));
+                newY = Math.max(0, Math.min(newY, window.innerHeight - riveContainer.offsetHeight));
+
+                riveContainer.style.left = newX + 'px';
+                riveContainer.style.top = newY + 'px';
+                riveContainer.style.bottom = 'auto'; 
+                riveContainer.style.right = 'auto'; 
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // மொபைல் போனில் Drag செய்வதற்கான Touch Events
+        riveContainer.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            const touch = e.touches[0];
+            offsetX = touch.clientX - riveContainer.getBoundingClientRect().left;
+            offsetY = touch.clientY - riveContainer.getBoundingClientRect().top;
+            riveContainer.style.transition = 'none';
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                e.preventDefault(); // ஸ்க்ரோல் ஆவதைத் தடுக்க
+                const touch = e.touches[0];
+                let newX = touch.clientX - offsetX;
+                let newY = touch.clientY - offsetY;
+                
+                newX = Math.max(0, Math.min(newX, window.innerWidth - riveContainer.offsetWidth));
+                newY = Math.max(0, Math.min(newY, window.innerHeight - riveContainer.offsetHeight));
+
+                riveContainer.style.left = newX + 'px';
+                riveContainer.style.top = newY + 'px';
+                riveContainer.style.bottom = 'auto'; 
+                riveContainer.style.right = 'auto';
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+    </script>
+
+</body>
+</html>
